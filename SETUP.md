@@ -45,7 +45,17 @@ No dashboard Vercel → projeto → `Settings → Git → Disconnect`.
 
 **Importante:** se não fizer isto, o Vercel vai tentar fazer deploy em cada push e vai bloquear os commits de autores sem acesso. O workflow GitHub Actions passa a ser a única via de deploy.
 
-## 5. Substituir placeholders no workflow
+## 5. Confirmar scope das env vars do projeto
+
+No dashboard Vercel → projeto → `Settings → Environment Variables`, confirmar que **todas** as env vars necessárias (ex. `NEXT_PUBLIC_SUPABASE_URL`, `STRIPE_SECRET_KEY`, etc.) estão marcadas para os ambientes onde forem precisas:
+
+- **Production** — usadas pelo deploy de `main`
+- **Preview** — usadas pelos deploys de PRs (commonly skipped, depois preview falha no build)
+- **Development** — usadas em `vercel dev` local
+
+Se uma var só estiver em `Production`, o `vercel pull --environment=preview` no runner não a puxa e o build rebenta com "missing env var". Para partilhar valor entre ambientes, tick nos 3 checkboxes ao criar/editar a var. Para isolar (ex. base de dados de staging separada), põe valores diferentes em cada ambiente.
+
+## 6. Substituir placeholders no workflow
 
 Editar `.github/workflows/vercel-deploy.yml` e trocar:
 
@@ -54,7 +64,7 @@ Editar `.github/workflows/vercel-deploy.yml` e trocar:
 
 Aparece em 2 sítios (job `preview` e job `production`).
 
-## 6. Commit e push
+## 7. Commit e push
 
 ```bash
 git add .github/workflows/vercel-deploy.yml
@@ -72,3 +82,5 @@ git push
 **`vercel pull` falha:** confirmar que `VERCEL_ORG_ID` e `VERCEL_PROJECT_ID` batem certo com o `.vercel/project.json` local.
 
 **Preview não comenta no PR:** confirmar que o workflow tem `permissions: pull-requests: write`.
+
+**Build falha com env vars em falta (ex. `NEXT_PUBLIC_SUPABASE_URL required`, `Stripe key missing`):** as env vars existem no Vercel mas só para o ambiente `Production`. Ir a `Settings → Environment Variables` e ticar também `Preview` (e `Development` se precisar). Ver passo 5.
